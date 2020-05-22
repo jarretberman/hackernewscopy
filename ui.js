@@ -9,6 +9,7 @@ $(async function () {
   const $navLogin = $("#nav-login");
   const $navLogOut = $("#nav-logout");
   const $navAddStory = $("#nav-addStory")
+  const $navFavs = $("#nav-seeFavorites")
   const $modal = $('#modal')
 
   // global storyList variable
@@ -48,9 +49,14 @@ $(async function () {
     const password = $("#login-password").val();
 
     // call the login static method to build a user instance
+    try{
     const userInstance = await User.login(username, password);
-    // set the global user to the user instance
     currentUser = userInstance;
+    }catch(e){
+      return alert('wrong username or password')
+    }
+    // set the global user to the user instance
+    
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
   });
@@ -152,6 +158,8 @@ $(async function () {
     })
     $modal.show()
   })
+
+
 
   /**
    * Modal Closing Code Below
@@ -287,6 +295,15 @@ $(async function () {
 
   // /* favoriting functions
 
+  $navFavs.on('click', async (evt)=>{
+    $allStoriesList.empty();
+    for(story of currentUser.favorites){
+      const result = generateStoryHTML(story)
+      $allStoriesList.append(result)
+
+    }
+  })
+
   $allStoriesList.on('click', async (evt) =>{
     
     const target = evt.target
@@ -372,6 +389,7 @@ $(async function () {
     $navLogin.hide();
     $navLogOut.show();
     $navAddStory.show();
+    $navFavs.show();
   }
 
   /* simple function to pull the hostname from a URL */

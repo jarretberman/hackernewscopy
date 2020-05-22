@@ -33,10 +33,11 @@
     <span class="nav-link nav-right hidden" id="nav-welcome">
       <a href="#" id="nav-user-profile"></a>
     </span>
+    <a class="hidden" id="nav-addStory" href="#"><small>Add Story</small></a>
+    <a class="hidden" id="nav-seeFavorites" href="#"><small>Favorites</small></a>
     <a class="hidden" id="nav-logout" href="#">
       <small>(logout)</small>
     </a>
-    <a class="hidden" id="nav-addStory" href="#">Add a Story</a>
   </nav>
   <section class="articles-container container">
     <form action="" class="hidden" id="submit-form">
@@ -114,13 +115,14 @@
       <button type="submit">create account</button>
     </form>
   </section>
-  <section id="user-profile" class="container hidden">
-    <h4>User Profile Info</h4>
+  <section id="user-profile" class="container">
+    <div class = hidden><h4>User Profile Info</h4>
     <section>
       <div id="profile-name">Name:</div>
       <div id="profile-username">Username:</div>
       <div id="profile-account-date">Account Created:</div>
     </section>
+  </div>
   </section>
 </body>
 <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="

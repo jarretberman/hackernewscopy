@@ -22,8 +22,12 @@ h5 {
 }
 
 a {
+  padding-left: 15px;
   text-decoration: none;
   color: inherit;
+}
+a#nav-addStory {
+  margin-left:auto;
 }
 
 span {
