@@ -26,6 +26,20 @@ a {
   color: inherit;
 }
 
+span {
+  font-size: large
+}
+span.delete {
+  margin-left: 50%;
+  padding-left: 10%;
+}
+span:hover {
+  color:goldenrod;
+}
+span.delete:hover{
+  color:red;
+}
+
 a:hover {
   text-decoration: underline;
 }
@@ -231,10 +245,11 @@ form > hr {
 /* Modal Content/Box */
 .modal-content {
   background-color: #fefefe;
+  text-align: center;
   margin: 15% auto; /* 15% from the top and centered */
   padding: 20px;
   border: 1px solid #888;
-  width: 80%; /* Could be more or less, depending on screen size */
+  width: 50%; /* Could be more or less, depending on screen size */
 }
 
 /* The Close Button */
@@ -250,6 +265,11 @@ form > hr {
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+
+#story-form{
+  text-align: center;
+  display: inline-block
 }
 
 /** responsive queries for tightening things up for mobile. */

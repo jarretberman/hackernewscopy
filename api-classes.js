@@ -34,6 +34,11 @@ class StoryList {
     const storyList = new StoryList(stories);
     return storyList;
   }
+  static async getMoreStories(skip,limit = 25){
+    const response = await axios.get(`${BASE_URL}/stories/?skip=${skip}&limit=${limit}`)
+    const stories = response.data.stories.map(story => new Story(story));
+    return stories
+  }
 
   /**
    * Method to make a POST request to /stories and add the new story to the list
@@ -54,6 +59,9 @@ class StoryList {
     
     return story.data
 
+  }
+  static async deleteStory(user, storyId) {
+    const response = await axios.delete(`${BASE_URL}/stories/${storyId}`, {data:{token:user.loginToken}})
   }
 }
 
@@ -91,8 +99,8 @@ class User {
         username,
         password,
         name
-      }
-    });
+      }}
+    )
 
     // build a new User instance from the API response
     const newUser = new User(response.data.user);
@@ -157,6 +165,16 @@ class User {
     existingUser.favorites = response.data.user.favorites.map(s => new Story(s));
     existingUser.ownStories = response.data.user.stories.map(s => new Story(s));
     return existingUser;
+  }
+
+  static async postFavorites (user, id)  {
+    const response = await axios.post(`${BASE_URL}/users/${user.username}/favorites/${id}`, {token:user.loginToken})
+    return response.data
+  }
+
+  static async removeFavorite (user, id) {
+    const response =  await axios.delete(`${BASE_URL}/users/${user.username}/favorites/${id}`, {data:{token:user.loginToken}})
+    return response.data
   }
 }
 

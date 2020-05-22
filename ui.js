@@ -19,6 +19,22 @@ $(async function () {
 
   await checkIfLoggedIn();
 
+  // more stories functionality
+  window.onscroll = async function(ev) {
+    if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) {
+        const skipNum = storyList.stories.length
+        const moreStories = await StoryList.getMoreStories(skipNum)
+        for (let story of moreStories) {
+          storyList.stories.push(story)
+          const result = generateStoryHTML(story);
+          $allStoriesList.append(result);
+        }
+
+
+
+
+    }
+};
   /**
    * Event listener for logging in.
    *  If successfully we will setup the user instance
@@ -49,12 +65,23 @@ $(async function () {
 
     // grab the required fields
     let name = $("#create-account-name").val();
-    let username = $("#create-account-username").val();
+    let username = $("#create-account-username").val() 
     let password = $("#create-account-password").val();
 
+    if(name === '' || password === '') {
+      
+      return alert('Please enter a name and password')
+    }
+
     // call the create method, which calls the API and then builds a new user instance
-    const newUser = await User.create(username, password, name);
-    currentUser = newUser;
+    try {const newUser = await User.create(username, password, name);
+      currentUser = newUser;
+    }catch (e){
+      
+      const status = e.response.status;
+      return status === 409 ? alert('Username already taken.'): alert('Oops. Something went wrong');
+    };
+    
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
   });
@@ -85,7 +112,8 @@ $(async function () {
    * 
    */
   $navAddStory.on("click", function () {
-    const $storyform = $(`<form>
+    const $storyform = $(`<div id= "modalContent">
+    <form id ="story-form">
         <h3>Add a Story</h3>
         <label for='storyTitle'>Title: </label>
         <input  id = "storyTitle" type = 'text'><br>
@@ -94,13 +122,16 @@ $(async function () {
         <label for='storyUrl'>Url: </label>
         <input  id ='storyUrl' type = 'url'><br>
         <input id='submitStory' type ='submit' value = 'Submit'>
-    </form>`)
-    $("#modalContent").append($storyform)
+    </form>
+    </div>`)
+    $(".modal-content").append($storyform)
+    $(".modal-content").prepend('<span class="close" id="closeModal">&times;</span>')
+    $('#closeModal').on('click', () => {
+      $modal.hide()
+      $('.modal-content').empty()
+    })
     $('#submitStory').on('click', async (evt) => {
       evt.preventDefault()
-
-      //Uri format validation
-      // const url = $('#storyUrl').val().slice(0,3) === "http" ? $('#storyUrl').val() : `https://${$('#storyUrl').val()}` 
 
       const storyObj = {
         author: $('#storyAuthor').val(),
@@ -108,10 +139,12 @@ $(async function () {
         url: $('#storyUrl').val(),
         username: currentUser.username
       }
-      console.log(storyObj, currentUser)
+      
       try {
         const story = await storyList.addStory(currentUser, storyObj)
         generateStories()// call to append most recent story
+        $modal.hide()
+        $('.modal-content').empty()
       } catch {
         alert("Make sure you have an author, a title, and proper url including 'http://'!")
       }
@@ -127,13 +160,10 @@ $(async function () {
   $(document).on('click', (evt) => {
     if (evt.target.id == 'modal') {
       $modal.hide()
-      $('#modalContent').empty()
+      $('.modal-content').empty()
     }
   })
-  $('#closeModal').on('click', () => {
-    $modal.hide()
-    $('#modalContent').empty()
-  })
+
 
 
 
@@ -183,6 +213,7 @@ $(async function () {
     $createAccountForm.trigger("reset");
 
     // show the stories
+    generateStories()
     $allStoriesList.show();
 
     // update the navigation bar
@@ -206,7 +237,15 @@ $(async function () {
     for (let story of storyList.stories) {
       const result = generateStoryHTML(story);
       $allStoriesList.append(result);
+
+
+
     }
+    // $('li').on('mouseenter mouseleave', (evt)=>{
+    //   const span = evt.target.children[1]
+    //   $(span).toggle()
+    // })
+    
   }
 
   /**
@@ -215,22 +254,106 @@ $(async function () {
 
   function generateStoryHTML(story) {
     let hostName = getHostName(story.url);
+    let fav = false
+    //checking if there is a current user to display favorites
+    if(currentUser){
+      for( favorite of currentUser.favorites){
+        if(favorite.storyId === story.storyId){
+          fav = true
+        } 
+      }
+    }
+    const star = fav ? '&#x2605;' : '&#x2606;';
 
     // render story markup
     const storyMarkup = $(`
+    
       <li id="${story.storyId}">
+      <span data-name= 'favorite'>${localStorage.token ? star : ''}</span>
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
-        <small class="article-author">by ${story.author}</small>
+        
+        <small class="article-author" >by ${story.author}</small>
         <small class="article-hostname ${hostName}">(${hostName})</small>
-        <small class="article-username">posted by ${story.username}</small>
+        
       </li>
     `);
-
+    if(currentUser){ currentUser.username === story.username ?storyMarkup.append('<span class = "delete" data-name="delete">&times;<span>'):false;}
+    storyMarkup.append(`<small class="article-username">posted by ${story.username}</small>`)
+    
     return storyMarkup;
   }
 
+  // /* favoriting functions
+
+  $allStoriesList.on('click', async (evt) =>{
+    
+    const target = evt.target
+  
+    if(target.dataset.name === 'favorite'){
+      const parentId = target.parentNode.id
+      const favorite = checkIfFavorite(currentUser,target.parentNode.id)
+      
+      if(!favorite) {
+        const newFav = await User.postFavorites(currentUser, parentId)
+        
+        currentUser.favorites = newFav.user.favorites
+        $(target).html(' &#x2605; ')
+      } else {
+        //code for remove favorite here
+        const deleteFav = await User.removeFavorite(currentUser, parentId)
+        
+        $(target).html(' &#x2606; ')
+      }
+    }
+    if(target.dataset.name === 'delete'){
+      const parentId = target.parentNode.id
+      deleteAlert(currentUser,parentId)
+    }
+  })
+
+  const checkIfFavorite = (user,id) => {
+    for ( favorite of user.favorites){
+      if ( favorite.storyId === id) return true;
+    }
+    
+    return false
+
+  };
+  
+  /**
+   * deleting stories UI functionality
+   */
+
+   const deleteAlert = (user,id) => {
+      //confirm desire to delete
+
+      const alert = $(`<h2> Are you sure you want to delete this story?</h2>
+          <button id = 'yesDel'>Yes</button>
+          <button id= 'noDel'>No</button>`)
+      $modal.show()
+      $('.modal-content').append(alert)
+      $('#yesDel').on('click', async(evt) =>{
+        const response = await removeStory(user,id)
+        $('.modal-content').empty()
+        $modal.hide()
+        return response
+      })
+      $('#noDel').on('click', ()=>{
+        $('.modal-content').empty()
+        $modal.hide()
+      })
+      
+
+   }
+
+   const removeStory = async (user, id) => {
+      const response = await StoryList.deleteStory(user,id)
+      $(`#${id}`).remove()
+   }
+
+  
   /* hide all elements in elementsArr */
 
   function hideElements() {
